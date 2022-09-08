@@ -2,10 +2,11 @@
 
 This code repository contains a python software implementation of  [Recommendation ITU-R P.2001-4](https://www.itu.int/rec/R-REC-P.2001/en) with a general purpose wide-range terrestrial propagation model in the frequency range 30 MHz to 50 GHz.    
 
+This is a development code and not necessarily in line with the original reference [MATLAB/Octave Implementation of Recommendation ITU-R P.2001](https://github/eeveetza/p2001) approved by ITU-R Working Party 3M and published on [ITU-R SG 3 Software, Data, and Validation Web Page](https://www.itu.int/en/ITU-R/study-groups/rsg3/Pages/iono-tropo-spheric.aspx).
 
 The package can be downloaded and installed using:
 ~~~
-python -m pip install "git+https://github.com/eeveetza/Py2001/#egg=Py2001"   
+python -m pip install "git+https://github.com/eeveetza/Py2001@dev#egg=Py2001"   
 ~~~
 
 and imported as follows
@@ -13,7 +14,7 @@ and imported as follows
 from Py2001 import P2001
 ~~~
 
-This is a translation of the original reference MATLAB/Octave implementation of this Recommendation  approved by ITU-R Working Party 3M and published by Study Group 3 on [ITU-R SG 3 Software, Data, and Validation Web Page](https://www.itu.int/en/ITU-R/study-groups/rsg3/Pages/iono-tropo-spheric.aspx).
+
 
 
 | File/Folder               | Description                                                         |
