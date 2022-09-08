@@ -1,0 +1,26 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "Py2001"
+authors = [{name = "Ivica Stevanovic", email = "ivica.stevanovic@bakom.admin.ch"}]
+readme = "README.md"
+dynamic = ["version", "description"]
+dependencies = [
+    "numpy",
+    "matplotlib",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["tests"]  # ["."] by default
+include = ["*.csv"]  # ["*"] by default
+exclude = []  # empty by default
+namespaces = true  # true by default
+
+[project.urls]
+Home = "https://github.com/eeveetza/Py2001.git"
+
