@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: 'Python Implementation of Recommendation ITU-R P.2001-4'
+title: 'Python Implementation of Recommendation ITU-R P.2001'
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
@@ -12,5 +12,5 @@ authors:
     affiliation: Swiss Federal Office of Communications
     orcid: 'https://orcid.org/0000-0002-5032-1844'
 doi: 
-url: https://github.com/eeveetza/p2001
+url: https://github.com/eeveetza/Py2001
 version: 4.0
