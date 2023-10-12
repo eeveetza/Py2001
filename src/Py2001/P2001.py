@@ -88,7 +88,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     Tpcq = 100 - Tpcp  # Eq (3.1.2)
 
     # Ensure that vector d is ascending
-    if not issorted(d):
+    if not np.all(np.diff(d) >= 0):
         raise ValueError("The array of path profile points d(i) must be in ascending order.")
 
     # Ensure that d[0] = 0 (Tx position)
@@ -1276,7 +1276,7 @@ def distance_to_sea(d, zone):
 
     (kk,) = np.where(zone == 1)
 
-    if isempty(kk):  # complete path is inland or inland coast
+    if np.size(kk) == 0:  # complete path is inland or inland coast
         dct = d[-1]
         dcr = d[-1]
 
@@ -3361,20 +3361,6 @@ def find_intervals(series):
         (k2,) = np.where(np.diff(np.append(series_int, 0)) == -1)
 
     return k1, k2
-
-
-def isempty(x):
-    if np.size(x) == 0:
-        return True
-    else:
-        return False
-
-
-def issorted(a):
-    if np.all(np.diff(a) >= 0):
-        return True
-    else:
-        return False
 
 
 def sind(x):
