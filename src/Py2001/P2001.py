@@ -6,7 +6,6 @@ Created on Tue 5 Sep 2022
 """
 
 import numpy as np
-import os
 
 # from scipy import interpolate
 # import dask.dataframe
@@ -117,11 +116,6 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     if not (FlagVP == 0 or FlagVP == 1):
         raise ValueError("The polarization FlagVP can be either 0 (horizontal) or 1 (vertical).")
 
-    if dt < 0.1:
-        FlagShort = 1
-    else:
-        FlagShort = 0
-
     # Calculate the longitude and latitude of the mid-point of the path, Phime,
     # and Phimn for dpnt = 0.5dt
 
@@ -145,20 +139,12 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
 
     omega = path_fraction(d, z, 1)
 
-    if omega >= 0.75:
-        FlagSea = 1
-    else:
-        FlagSea = 0
-
     ## 3.3 Antenna altitudes and path inclinations
 
     # The Tx and Rx heights masl according to (3.3.1)
 
     Hts = Htg + h[0]
     Hrs = Hrg + h[-1]
-
-    H1 = h[0]
-    Hn = h[-1]
 
     # Assign the higher and lower antenna heights above sea level (3.3.2)
 
@@ -203,10 +189,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
 
     # Obtain Nd1kmp as in (3.4.1.2)
 
-    if Tpcp < 50:
-        Nd1kmp = Nd1km50 + SdNsup * np.log10(0.02 * Tpcp)
-    else:
-        Nd1kmp = Nd1km50 - SdNsub * np.log10(0.02 * Tpcq)
+    Nd1kmp = Nd1km50 + SdNsup * np.log10(0.02 * Tpcp) if Tpcp < 50 else Nd1km50 - SdNsub * np.log10(0.02 * Tpcq)
 
     # 3.4.2 Refractivity in the lowest 65 m
     # Obtain Nd65m1 from file dndz_01.txt for the midpoint of the path
@@ -226,11 +209,8 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
 
     # Effective Earth radius exceeded for p% time limited not to become
     # infinite (3.5.3)
+    Reffp = 1.0 / Cp if Cp > 1e-6 else 1e6
 
-    if Cp > 1e-6:
-        Reffp = 1.0 / Cp
-    else:
-        Reffp = 1e6
     # The path length expressed as the angle subtended by d km at the center of
     # a sphere of effective Earth radius (3.5.4)
 
@@ -267,7 +247,6 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     Ld_pol, Ldsph_pol, Ldba, Ldbs, Ldbka, Ldbks, FlagLospa, FlagLosps = dl_p(d, h, Hts, Hrs, Htep, Hrep, GHz, omega, Reffp, Cp)
 
     Ld = Ld_pol[FlagVP]
-    Ldsph = Ldsph_pol[FlagVP]
 
     # Use the method given in Attachemnt B.2 to calculate the notional
     # clear-air zero-fade exceedance percentage time Q0ca
@@ -499,17 +478,8 @@ def tl_sporadic_e(f, dt, thetat, thetar, phimn, phime, phitn, phite, phirn, phir
 
     # Diffraction parameters (G.2.6)
 
-    if delta1t >= 0:
-        nu1t = 3.651 * np.sqrt(1000 * f * dlt * (1 - np.cos(delta1t)) / np.cos(0.001 * thetat))
-
-    else:
-        nu1t = -3.651 * np.sqrt(1000 * f * dlt * (1 - np.cos(delta1t)) / np.cos(0.001 * thetat))
-
-    if delta1r >= 0:
-        nu1r = 3.651 * np.sqrt(1000 * f * dlr * (1 - np.cos(delta1r)) / np.cos(0.001 * thetar))
-
-    else:
-        nu1r = -3.651 * np.sqrt(1000 * f * dlr * (1 - np.cos(delta1r)) / np.cos(0.001 * thetar))
+    nu1t = (1 if delta1t >= 0 else -1) * 3.651 * np.sqrt(1000 * f * dlt * (1 - np.cos(delta1t)) / np.cos(0.001 * thetat))
+    nu1r = (1 if delta1r >= 0 else -1) * 3.651 * np.sqrt(1000 * f * dlr * (1 - np.cos(delta1r)) / np.cos(0.001 * thetar))
 
     # Diffraction lossess at the two terminals (G.2.7)
 
@@ -538,32 +508,24 @@ def tl_sporadic_e(f, dt, thetat, thetar, phimn, phime, phitn, phite, phirn, phir
     # foes for one-quarter point
     # Map phime (-180, 180) to loncnt (0,360);
 
-    phie = Phi1qe
-    phin = Phi1qn
-
-    if phie < 0:
-        phie = phie + 360
+    phie = Phi1qe + 360 if Phi1qe < 0 else Phi1qe
 
     # Find foes1/2 from the correspoinding files for the one-quorter-point - as a bilinear interpolation
 
-    foes1 = interp2(foes1tab, phie, phin, 1.5, 1.5)
-    foes2 = interp2(foes2tab, phie, phin, 1.5, 1.5)
+    foes1 = interp2(foes1tab, phie, Phi1qn, 1.5, 1.5)
+    foes2 = interp2(foes2tab, phie, Phi1qn, 1.5, 1.5)
 
     FoEs2hop1q = foes1 + (foes2 - foes1) * (np.log10(p / p1)) / (np.log10(p2 / p1))  # Eq (G.1.1)
 
     # foes for three-quarter point
     # Map phie (-180, 180) to loncnt (0,360);
 
-    phie = Phi3qe
-    phin = Phi3qn
-
-    if phie < 0:
-        phie = phie + 360
+    phie = Phi3qe + 360 if Phi3qe < 0 else Phi3qe
 
     # Find foes1/2 from the correspoinding files for the one-quorter-point - as a bilinear interpolation
 
-    foes1 = interp2(foes1tab, phie, phin, 1.5, 1.5)
-    foes2 = interp2(foes2tab, phie, phin, 1.5, 1.5)
+    foes1 = interp2(foes1tab, phie, Phi3qn, 1.5, 1.5)
+    foes2 = interp2(foes2tab, phie, Phi3qn, 1.5, 1.5)
 
     FoEs2hop3q = foes1 + (foes2 - foes1) * (np.log10(p / p1)) / (np.log10(p2 / p1))  # Eq (G.1.1)
 
@@ -598,17 +560,8 @@ def tl_sporadic_e(f, dt, thetat, thetar, phimn, phime, phitn, phite, phirn, phir
 
     # Corresponding diffraction parameters (G.3.6)
 
-    if delta2t >= 0:
-        nu2t = 3.651 * np.sqrt(1000.0 * f * dlt * (1 - np.cos(delta2t)) / np.cos(0.001 * thetat))
-
-    else:
-        nu2t = -3.651 * np.sqrt(1000 * f * dlt * (1 - np.cos(delta2t)) / np.cos(0.001 * thetat))
-
-    if delta2r >= 0:
-        nu2r = 3.651 * np.sqrt(1000 * f * dlr * (1 - np.cos(delta2r)) / np.cos(0.001 * thetar))
-
-    else:
-        nu2r = -3.651 * np.sqrt(1000 * f * dlr * (1 - np.cos(delta2r)) / np.cos(0.001 * thetar))
+    nu2t = (1 if delta2t >= 0 else -1) * 3.651 * np.sqrt(1000 * f * dlt * (1 - np.cos(delta2t)) / np.cos(0.001 * thetat))
+    nu2r = (1 if delta2r >= 0 else -1) * 3.651 * np.sqrt(1000 * f * dlr * (1 - np.cos(delta2r)) / np.cos(0.001 * thetar))
 
     # Diffraction lossess at the two terminals (G.3.7)
 
@@ -779,11 +732,8 @@ def gaseous_abs_tropo_t2cv(rho_sur, h_sur, theta_el, dcv, f):
 
     # Calculate the quantities do and dw for oxygen and water vapour (F.4.1)
 
-    d0 = 0.65 * np.sin(0.001 * theta_el) + 0.35 * np.sqrt((np.sin(0.001 * theta_el)) ** 2 + 0.00304)
-    d0 = 5.0 / d0
-
-    dw = 0.65 * np.sin(0.001 * theta_el) + 0.35 * np.sqrt((np.sin(0.001 * theta_el)) ** 2 + 0.00122)
-    dw = 2.0 / dw
+    d0 = 5.0 / (0.65 * np.sin(0.001 * theta_el) + 0.35 * np.sqrt((np.sin(0.001 * theta_el)) ** 2 + 0.00304))
+    dw = 2.0 / (0.65 * np.sin(0.001 * theta_el) + 0.35 * np.sqrt((np.sin(0.001 * theta_el)) ** 2 + 0.00122))
 
     # Effective distances for oxygen and water vapour (F.4.2)
 
@@ -899,40 +849,14 @@ def tl_troposcatter(f, dt, thetat, thetar, thetae, phicvn, phicve, phitn, phite,
     # From Table E.1 assign meteorological and atmospheric parameters M,
     # gamma and equation
 
-    if climzone == 1:
-        M = 129.6
-        gamma = 0.33
-        eq = 8
-
-    elif climzone == 2:
-        M = 119.73
-        gamma = 0.27
-        eq = 6
-
-    elif climzone == 3:
-        M = 109.3
-        gamma = 0.32
-        eq = 9
-
-    elif climzone == 4:
-        M = 128.5
-        gamma = 0.27
-        eq = 10
-
-    elif climzone == 5:
-        M = 119.73
-        gamma = 0.27
-        eq = 6
-
-    elif climzone == 6:
-        M = 123.2
-        gamma = 0.27
-        eq = 6
-
-    else:  # climzone == 0
-        M = 116
-        gamma = 0.27
-        eq = 7
+    if climzone > 6 or climzone < 0:
+        climzone = 0
+    M_arr = [116, 129.6, 119.73, 109.3, 128.5, 119.73, 123.2]
+    gamma_arr = [0.27, 0.33, 0.27, 0.32, 0.27, 0.27, 0.27]
+    eq_arr = [7, 8, 6, 9, 10, 6, 6]
+    M = M_arr[climzone]
+    gamma = gamma_arr[climzone]
+    eq = eq_arr[climzone]
 
     ## E.3 Calculation of tropocscatter basic transmission loss
 
@@ -994,11 +918,7 @@ def tl_troposcatter(f, dt, thetat, thetar, thetae, phicvn, phicve, phitn, phite,
 
     # Conversion factor given by (E.11)
 
-    if p >= 50:
-        C = 1.26 * (-np.log10((100.0 - p) / 50.0)) ** 0.63
-
-    else:
-        C = -1.26 * (-np.log10(p / 50.0)) ** 0.63
+    C = 1.26 * (-np.log10((100.0 - p) / 50.0)) ** 0.63 if p >= 50 else -1.26 * (-np.log10(p / 50.0)) ** 0.63
 
     # Parameter Yp not exceeded for p% time (E.12)
 
@@ -1105,19 +1025,11 @@ def tl_anomalous_reflection(f, d, z, hts, hrs, htea, hrea, hm, thetat, thetar, d
 
     # Calculate parameter mu4 given by (D.2.3)
 
-    if abs(phimn) <= 70:
-        mu4 = 10 ** ((-0.935 + 0.0176 * abs(phimn)) * np.log10(mu1))
-
-    else:
-        mu4 = 10 ** (0.3 * np.log10(mu1))
+    mu4 = 10 ** ((-0.935 + 0.0176 * abs(phimn)) * np.log10(mu1)) if abs(phimn) <= 70 else 10 ** (0.3 * np.log10(mu1))
 
     # The point incidence of anomalous propagation for the path centre (D.2.4)
 
-    if abs(phimn) <= 70:
-        b0 = mu1 * mu4 * 10 ** (-0.015 * abs(phimn) + 1.67)
-
-    else:
-        b0 = 4.17 * mu1 * mu4
+    b0 = mu1 * mu4 * 10 ** (-0.015 * abs(phimn) + 1.67) if abs(phimn) <= 70 else 4.17 * mu1 * mu4
 
     ## D.3 Site-shielding losses with respect to the anomalous propagatoin mechanism
 
@@ -1133,16 +1045,8 @@ def tl_anomalous_reflection(f, d, z, hts, hrs, htea, hrea, hm, thetat, thetar, d
 
     # Tx and Rx site-shielding losses with respect to the duct (D.3.3)-(D.3.4)
 
-    if thetast > 0:
-        Ast = 20 * np.log10(1 + 0.361 * thetast * np.sqrt(f * dlt)) + 0.264 * thetast * f ** (1.0 / 3.0)
-    else:
-        Ast = 0
-
-    if thetasr > 0:
-        Asr = 20 * np.log10(1 + 0.361 * thetasr * np.sqrt(f * dlr)) + 0.264 * thetasr * f ** (1.0 / 3.0)
-
-    else:
-        Asr = 0
+    Ast = 20 * np.log10(1 + 0.361 * thetast * np.sqrt(f * dlt)) + 0.264 * thetast * f ** (1.0 / 3.0) if thetast > 0 else 0
+    Asr = 20 * np.log10(1 + 0.361 * thetasr * np.sqrt(f * dlr)) + 0.264 * thetasr * f ** (1.0 / 3.0) if thetasr > 0 else 0
 
     ## D.4 Over-sea surface duct coupling corrections
 
@@ -1154,25 +1058,15 @@ def tl_anomalous_reflection(f, d, z, hts, hrs, htea, hrea, hm, thetat, thetar, d
     # The over-sea surface duct coupling corrections for Tx and Rx
     # (D.4.2)-(D.4.3)
 
-    Act = 0
-    Acr = 0
-
-    if omega >= 0.75:
-        if dct <= dlt and dct <= 5:
-            Act = -3 * np.exp(-0.25 * dct**2) * (1 + np.tanh(0.07 * (50 - hts)))
-
-        if dcr <= dlr and dcr <= 5:
-            Acr = -3 * np.exp(-0.25 * dcr**2) * (1 + np.tanh(0.07 * (50 - hrs)))
+    Act = -3 * np.exp(-0.25 * dct**2) * (1 + np.tanh(0.07 * (50 - hts))) if omega >= 0.75 and dct <= dlt and dct <= 5 else 0
+    Acr = -3 * np.exp(-0.25 * dcr**2) * (1 + np.tanh(0.07 * (50 - hrs))) if omega >= 0.75 and dcr <= dlr and dcr <= 5 else 0
 
     ## D.5 Total coupling loss to the anomalous propagation mechanism
 
     # Empirical correction to account for the increasing attenuation with
     # wavelength in ducted propagation (D.5.2)
 
-    Alf = 0
-
-    if f < 0.5:
-        Alf = (45.375 - 137.0 * f + 92.5 * f**2) * omega
+    Alf = (45.375 - 137.0 * f + 92.5 * f**2) * omega if f < 0.5 else 0
 
     # Total coupling losses between the antennas and the anomalous propagation
     # mechanism (D.5.1)
@@ -1209,11 +1103,7 @@ def tl_anomalous_reflection(f, d, z, hts, hrs, htea, hrea, hm, thetat, thetar, d
 
     # Terrain roughness factor (D.7.2)
 
-    if hm > 10:
-        mu3 = np.exp(-4.6e-5 * (hm - 10) * (43 + 6 * dar))
-
-    else:
-        mu3 = 1
+    mu3 = np.exp(-4.6e-5 * (hm - 10) * (43 + 6 * dar)) if hm > 10 else 1
 
     # A term required for the path geometr ycorrection  (D.7.3)
 
@@ -1224,8 +1114,7 @@ def tl_anomalous_reflection(f, d, z, hts, hrs, htea, hrea, hm, thetat, thetar, d
 
     # Path geometry factor (D.7.4)
 
-    mu2 = 500 * dt**2 / (ae * (np.sqrt(htea) + np.sqrt(hrea)) ** 2)
-    mu2 = mu2**alpha
+    mu2 = (500 * dt**2 / (ae * (np.sqrt(htea) + np.sqrt(hrea)) ** 2)) ** alpha
 
     if mu2 > 1:
         mu2 = 1
@@ -1284,15 +1173,8 @@ def distance_to_sea(d, zone):
         nt = kk[0]
         nr = kk[-1]
 
-        if nt == 0:  # Tx is over sea
-            dct = 0
-        else:
-            dct = (d[nt] + d[nt - 1]) / 2.0 - d[0]
-
-        if nr == len(zone) - 1:  # Rx is over sea
-            dcr = 0
-        else:
-            dcr = d[-1] - (d[nr] + d[nr + 1]) / 2.0
+        dct = 0 if nt == 0 else (d[nt] + d[nt - 1]) / 2.0 - d[0]  # nt == 0 if Tx is over sea
+        dcr = 0 if nr == len(zone) - 1 else d[-1] - (d[nr] + d[nr + 1]) / 2.0  # nr == len(zone) - 1 if Rx is over sea
 
     return dct, dcr
 
@@ -1342,10 +1224,10 @@ def longest_cont_dist(d, zone, zone_r):
     for i in range(0, n):
         delta = 0
         if stop[i] < nmax - 1:
-            delta = delta + (d[stop[i] + 1] - d[stop[i]]) / 2.0
+            delta += (d[stop[i] + 1] - d[stop[i]]) / 2.0
 
         if start[i] > 0:
-            delta = delta + (d[stop[i]] - d[stop[i] - 1]) / 2.0
+            delta += (d[stop[i]] - d[stop[i] - 1]) / 2.0
 
         dm = max(d[stop[i]] - d[start[i]] + delta, dm)
 
@@ -1531,10 +1413,7 @@ def Qiter(Afade, Q0ca, Q0ra, flagtropo, a, b, c, dr, kmod, alpha_mod, Gm, Pm, fl
 
     # Compute Qcaf(Afade) as defined in Attachments B.4/5
 
-    if flagtropo == 0:
-        QcafA = clear_air_fade_surface(Afade, Q0ca)
-    else:
-        QcafA = clear_air_fade_tropo(Afade)
+    QcafA = clear_air_fade_surface(Afade, Q0ca) if flagtropo == 0 else clear_air_fade_tropo(Afade)
 
     # Function QiterA is defined for combined clear-air/precipitation fading
     # (4.1.3), (4.3.5)
@@ -1611,13 +1490,7 @@ def clear_air_fade_tropo(A):
     """
     ## B.5 Percentage time a given clear-air fade level is exceeded on a troposcatter path
 
-    if A < 0:
-        Qcaftropo = 100  # Eq (B.5.1a)
-
-    else:
-        Qcaftropo = 0  # Eq (B.5.1b)
-
-    return Qcaftropo
+    return 100 if A < 0 else 0 # Qcaftropo = Eq (B.5.1a) if A < 0 else Eq (B.5.1b)
 
 
 def precipitation_fade(Afade, a, b, c, dr, kmod, alpha_mod, Gm, Pm, flagrain):
@@ -1695,17 +1568,13 @@ def path_averaged_multiplier(hlo, hhi, hT):
     shi = int(1 + np.floor((hT - hhi) / 100.0))
 
     if slo < 1:  # path wholy above the melting layer
-        G = 0.0
-        return G
+        return 0
 
     if shi > 12:  # path is wholy at or below the lower edge of the melting layer
-        G = 1.0
-        return G
+        return 1
 
     if slo == shi:  # both antennas in the same melting-layer slice (C.5.2)
-        G = multi_layer(0.5 * (hlo + hhi) - hT)
-
-        return G
+        return multi_layer(0.5 * (hlo + hhi) - hT)
 
     # Initialize G for use as an accumulator (C.5.3)
 
@@ -1822,11 +1691,7 @@ def p838(f, theta, pol):
       v1    06SEP22     Ivica Stevanovic, OFCOM         translated to python
     """
 
-    if pol == 0:  # horizontal polarization
-        tau = 0.0
-
-    else:  # vertical polarization
-        tau = np.pi / 2.0
+    tau = 0.0 if pol == 0 else np.pi / 2.0  # horizontal polarization / vertical polarization
 
     # Coefficients for kH
     Table1 = np.mat([[-5.33980, -0.10008, 1.13098], [-0.35351, 1.26970, 0.45400], [-0.23789, 0.86036, 0.15354], [-0.94158, 0.64552, 0.16817]])
@@ -2188,12 +2053,7 @@ def zero_fade_annual_time(dca, epsca, hca, f, K, phimn):
 
     # Calculate the logarithmic climatic conversion factor (B.3.2)
 
-    if abs(phimn) <= 45:
-        Cg = 10.5 - 5.6 * np.log10(1.1 + (abs(cosd(2 * phimn))) ** 0.7) - 2.7 * np.log10(dca) + 1.7 * np.log10(1 + epsca)
-
-    else:
-        Cg = 10.5 - 5.6 * np.log10(1.1 - (abs(cosd(2 * phimn))) ** 0.7) - 2.7 * np.log10(dca) + 1.7 * np.log10(1 + epsca)
-
+    Cg = 10.5 - 5.6 * np.log10(1.1 + (1 if abs(phimn) <= 45 else -1) * (abs(cosd(2 * phimn))) ** 0.7) - 2.7 * np.log10(dca) + 1.7 * np.log10(1 + epsca)
     if Cg > 10.8:
         Cg = 10.8
 
@@ -2248,30 +2108,18 @@ def multi_path_activity(f, dt, hts, hrs, dlt, dlr, hlt, hlr, hlo, thetat, thetar
     if FlagLos50 == 1:
         # Calculate the notional zero fade annual percentage using (B.2.2)
 
-        dca = dt
-        epsca = epsp
-        hca = hlo
-
-        Q0ca = zero_fade_annual_time(dca, epsca, hca, f, K, phimn)
+        Q0ca = zero_fade_annual_time(dt, epsp, hlo, f, K, phimn)
 
     else:
         # Calculate the notoinal zero-fade annual percentage time at the
         # transmitter end Q0cat using (B.2.3)
 
-        dca = dlt
-        epsca = abs(thetat)
-        hca = min(hts, hlt)
-
-        Q0cat = zero_fade_annual_time(dca, epsca, hca, f, K, phimn)
+        Q0cat = zero_fade_annual_time(dlt, abs(thetat), min(hts, hlt), f, K, phimn)
 
         # Calculate th enotional zero-fade annual percentage time at the
         # receiver end Q0car using (B.2.4)
 
-        dca = dlr
-        epsca = abs(thetar)
-        hca = min(hrs, hlr)
-
-        Q0car = zero_fade_annual_time(dca, epsca, hca, f, K, phimn)
+        Q0car = zero_fade_annual_time(dlr, abs(thetar), min(hrs, hlr), f, K, phimn)
 
         Q0ca = max(Q0cat, Q0car)  # Eq (B.2.5)
 
@@ -2545,15 +2393,8 @@ def dl_se(d, hte, hre, ap, f, omega):
 
             Ldft = dl_se_ft(d, hte, hre, aem, f, omega)
 
-            if Ldft[0] < 0:
-                Ldsph[0] = 0
-            else:
-                Ldsph[0] = (1 - hse / hreq) * Ldft[0]  # Eq (A.2.5)
-
-            if Ldft[1] < 0:
-                Ldsph[1] = 0
-            else:
-                Ldsph[1] = (1 - hse / hreq) * Ldft[1]  # Eq (A.2.5)
+            Ldsph[0] = 0 if Ldft[0] < 0 else (1 - hse / hreq) * Ldft[0]  # Eq (A.2.5)
+            Ldsph[1] = 0 if Ldft[1] < 0 else (1 - hse / hreq) * Ldft[1]  # Eq (A.2.5)
 
     return Ldsph
 
@@ -2858,10 +2699,7 @@ def water_vapour_density_rain(rho_sur, h_sur):
       v0    13JUL16     Ivica Stevanovic, OFCOM         Initial version MATLAB
       v1    06SEP22     Ivica Stevanovic, OFCOM         translated to python
     """
-    if h_sur <= 2600:
-        rho_surr = rho_sur + 0.4 + 0.0003 * h_sur
-    else:
-        rho_surr = rho_sur + 5 * np.exp(-h_sur / 1800.0)
+    rho_surr = rho_sur + 0.4 + 0.0003 * h_sur if h_sur <= 2600 else rho_sur + 5 * np.exp(-h_sur / 1800.0)
 
     return rho_surr
 
