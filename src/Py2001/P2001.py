@@ -13,7 +13,10 @@ import numpy as np
 
 from importlib.resources import files
 
-DigitalMaps = np.load(files("Py2001").joinpath("P2001.npz"))
+DigitalMaps = {}
+with np.load(files("Py2001").joinpath("P2001.npz")) as DigitalMapsNpz:
+    for k in DigitalMapsNpz.files:
+        DigitalMaps[k] = DigitalMapsNpz[k].copy()
 
 
 def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, FlagVP):
