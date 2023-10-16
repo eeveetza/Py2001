@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pylint: disable=invalid-name,line-too-long,too-many-lines,too-many-arguments,too-many-locals,too-many-statements
 """
 Created on Tue 5 Sep 2022
 
@@ -37,8 +38,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     Variable    Unit  Type    Ref         Description
     d           km    float   (2.1a)      Distance from transmitter of i-th profile point
     h           m     float   (2.1b)      Height of i-th profile point (amsl)
-    z           z     int     (2.1c)      Zone code at distance di from transmitter
-                                        (1 = Sea, 3 = Coastal Land, 4 = Inland)
+    z           z     int     (2.1c)      Zone code at distance di from transmitter (1 = Sea, 3 = Coastal Land, 4 = Inland)
     GHz         GHz   float   T.2.2.1     Frequency
     Tpc         %     float   T.2.2.1     Percentage of average year for which the predicted basic transmission loss is not exceeded
     Phire       deg   float   T.2.2.1     Receiver longitude, positive to east
@@ -49,7 +49,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     Htg         m     float   T.2.2.1     Transmitting antenna height above ground
     Grx         dBi   float   T.2.2.1     Receiving antenna gain in the direction of the ray to the transmitting antenna
     Gtx         dBi   float   T.2.2.1     Transmitting antenna gain in the direction of the ray to the receiving antenna
-    FlagVp            int    T.2.2.1     Polarisation: 1 = vertical; 0 = horizontal
+    FlagVp            int     T.2.2.1     Polarisation: 1 = vertical; 0 = horizontal
 
     Output parameters:
     Lb     -   basic  transmission loss according to ITU-R P.2001-4
@@ -113,14 +113,14 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     if Htg <= 0 or Hrg <= 0:
         raise ValueError("The antenna heights above ground Htg and Hrg must be positive.")
 
-    if not (FlagVP == 0 or FlagVP == 1):
+    if not FlagVP in (0, 1):
         raise ValueError("The polarization FlagVP can be either 0 (horizontal) or 1 (vertical).")
 
     # Calculate the longitude and latitude of the mid-point of the path, Phime,
     # and Phimn for dpnt = 0.5dt
 
     dpnt = 0.5 * dt
-    Phime, Phimn, Bt2r, Dgc = great_circle_path(Phire, Phite, Phirn, Phitn, Re, dpnt)
+    Phime, Phimn, _, _ = great_circle_path(Phire, Phite, Phirn, Phitn, Re, dpnt)
 
     # Calculate the ground height in masl at the mid-point of the profile
     # according to whether the number of profile points n is odd or even
@@ -224,7 +224,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     ## 3.7 Path classification and terminal horizon parameters
     #  3.8 Effective heights and path roughness parameter
 
-    Thetat, Thetar, Thetatpos, Thetarpos, Dlt, Dlr, Ilt, Ilr, Hstip, Hsrip, Hstipa, Hsripa, Htea, Hrea, Mses, Hm, Hst, Hsr, Htep, Hrep, FlagLos50 = smooth_earth_heights(d, h, Hts, Hrs, Reff50, Wave)
+    Thetat, Thetar, Thetatpos, Thetarpos, Dlt, Dlr, Ilt, Ilr, _, _, _, _, Htea, Hrea, _, Hm, _, _, Htep, Hrep, FlagLos50 = smooth_earth_heights(d, h, Hts, Hrs, Reff50, Wave)
 
     ## 3.9 Troposhperic-scatter path segments
 
@@ -235,7 +235,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     # attenuations due to oxygen, and for water vapour under both non-rain and
     # rain conditions for a surface path
 
-    Aosur, Awsur, Awrsur, Gamo, Gamw, Gamwr, Wvsurmid = gaseous_abs_surface(Phime, Phimn, Hmid, Hts, Hrs, dt, GHz)
+    Aosur, Awsur, Awrsur, _, _, _, _ = gaseous_abs_surface(Phime, Phimn, Hmid, Hts, Hrs, dt, GHz)
 
     Agsur = Aosur + Awsur  # Eq (3.10.1)
 
@@ -244,7 +244,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     # Calculate the diffraction loss not exceeded for p% time, as described in
     # Attachment A
 
-    Ld_pol, Ldsph_pol, Ldba, Ldbs, Ldbka, Ldbks, FlagLospa, FlagLosps = dl_p(d, h, Hts, Hrs, Htep, Hrep, GHz, omega, Reffp, Cp)
+    Ld_pol, _, _, _, _, _, _, _ = dl_p(d, h, Hts, Hrs, Htep, Hrep, GHz, omega, Reffp, Cp)
 
     Ld = Ld_pol[FlagVP]
 
@@ -282,7 +282,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     # Use the method given in Attachment D to calculate basic transmission loss
     # not exceeded for p% time due to anomalous propagation Eq (4.2.1)
 
-    Lba, Aat, Aad, Aac, Dct, Dcr, Dtm, Dlm = tl_anomalous_reflection(GHz, d, z, Hts, Hrs, Htea, Hrea, Hm, Thetat, Thetar, Dlt, Dlr, Phimn, omega, Reff50, Tpcp, Tpcq)
+    Lba, _, _, _, _, _, _, _ = tl_anomalous_reflection(GHz, d, z, Hts, Hrs, Htea, Hrea, Hm, Thetat, Thetar, Dlt, Dlr, Phimn, omega, Reff50, Tpcp, Tpcq)
 
     Lbm2 = Lba + Agsur
 
@@ -291,7 +291,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     # Use the method given in Attachment E to calculate the troposcatter basic
     # transmission loss Lbs as given by equation (E.17)
 
-    Lbs, Thetas, Ztropo = tl_troposcatter(GHz, dt, Thetat, Thetar, Thetae, Phicvn, Phicve, Phitn, Phite, Phirn, Phire, Gtx, Grx, Reff50, Tpcp)
+    Lbs, _, _ = tl_troposcatter(GHz, dt, Thetat, Thetar, Thetae, Phicvn, Phicve, Phitn, Phite, Phirn, Phire, Gtx, Grx, Reff50, Tpcp)
 
     # To avoid under-estimating troposcatter for short paths, limit Lbs (E.17)
 
@@ -338,7 +338,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     # due to oxygen and for water vapour under both non-rain and rain
     # conditions for a troposcatter path (4.3.7)
 
-    Aos, Aws, Awrs, Aotcv, Awtcv, Awrtcv, Aorcv, Awrcv, Awrrcv, Wvsurtx, Wvsurrx = gaseous_abs_tropo(Phite, Phitn, Phire, Phirn, h[0], h[-1], Thetatpos, Thetarpos, Dtcv, Drcv, GHz)
+    Aos, Aws, Awrs, _, _, _, _, _, _, _, _ = gaseous_abs_tropo(Phite, Phitn, Phire, Phirn, h[0], h[-1], Thetatpos, Thetarpos, Dtcv, Drcv, GHz)
 
     # Total gaseous attenuation under non-rain conditions is given by (4.3.7)
 
@@ -350,7 +350,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
 
     ## 4.4 Sub-model 4. Sporadic - E
 
-    Lbm4, Lbes1, Lbes2, Lp1t, Lp2t, Lp1r, Lp2r, Gam1, Gam2, Foes1, Foes2, Phi1qe, Phi1qn, Phi3qe, Phi3qn = tl_sporadic_e(GHz, dt, Thetat, Thetar, Phimn, Phime, Phitn, Phite, Phirn, Phire, Dlt, Dlr, Reff50, Re, Tpcp)
+    Lbm4, _, _, _, _, _, _, _, _, _, _, _, _, _, _ = tl_sporadic_e(GHz, dt, Thetat, Thetar, Phimn, Phime, Phitn, Phite, Phirn, Phire, Dlt, Dlr, Reff50, Re, Tpcp)
 
     ## 5 Combining sub-model results
 
@@ -495,15 +495,8 @@ def tl_sporadic_e(f, dt, thetat, thetar, phimn, phime, phitn, phite, phirn, phir
 
     # Latitude and longitude of the one-quarter point
 
-    d1q = 0.25 * dt
-
-    Phi1qe, Phi1qn, Bt2rq, Dgcq = great_circle_path(phire, phite, phirn, phitn, Re, d1q)
-
-    # Latitude and longitude of the one-quarter point
-
-    d3q = 0.75 * dt
-
-    Phi3qe, Phi3qn, Bt2rq, Dgcq = great_circle_path(phire, phite, phirn, phitn, Re, d3q)
+    Phi1qe, Phi1qn, _, _ = great_circle_path(phire, phite, phirn, phitn, Re, 0.25 * dt)
+    Phi3qe, Phi3qn, _, _ = great_circle_path(phire, phite, phirn, phitn, Re, 0.75 * dt)
 
     # foes for one-quarter point
     # Map phime (-180, 180) to loncnt (0,360);
@@ -566,7 +559,6 @@ def tl_sporadic_e(f, dt, thetat, thetar, phimn, phime, phitn, phite, phirn, phir
     # Diffraction lossess at the two terminals (G.3.7)
 
     Lp2t = dl_knife_edge(nu2t)
-
     Lp2r = dl_knife_edge(nu2r)
 
     # Sporadic-E two-hop basic transmission loss
@@ -728,7 +720,7 @@ def gaseous_abs_tropo_t2cv(rho_sur, h_sur, theta_el, dcv, f):
     # Use equation (F.6.2) to calculate the sea-level specifica ttenuation due
     # to water vapour undr rain conditions gamma_wr
 
-    gamma_ar, gamma_wr = specific_sea_level_attenuation(f, rho_surr, h_sur)
+    _, gamma_wr = specific_sea_level_attenuation(f, rho_surr, h_sur)
 
     # Calculate the quantities do and dw for oxygen and water vapour (F.4.1)
 
@@ -926,8 +918,7 @@ def tl_troposcatter(f, dt, thetat, thetar, thetae, phicvn, phicve, phitn, phite,
 
     # Limit the value of theta such that theta >= 1e-6
 
-    if theta < 1e-6:
-        theta = 1e-6
+    theta = max(theta, 1e-6)
 
     # Distance and frequency dependent losses (E.13) and (E.14)
 
@@ -1018,10 +1009,7 @@ def tl_anomalous_reflection(f, d, z, hts, hrs, htea, hrea, hm, thetat, thetar, d
     # Calculate parameter mu_1 characterizing the degree to which the path is
     # over land (D.2.2)
 
-    mu1 = (10 ** (-dtm / (16 - 6.6 * tau)) + 10 ** (-(2.48 + 1.77 * tau))) ** 0.2
-
-    if mu1 > 1:
-        mu1 = 1
+    mu1 = min((10 ** (-dtm / (16 - 6.6 * tau)) + 10 ** (-(2.48 + 1.77 * tau))) ** 0.2, 1)
 
     # Calculate parameter mu4 given by (D.2.3)
 
@@ -1090,10 +1078,8 @@ def tl_anomalous_reflection(f, d, z, hts, hrs, htea, hrea, hm, thetat, thetar, d
     theta_a = 1000 * dt / ae + theta_at + theta_ar  # mrad
 
     # Angular-distance dependent loss (D.6.4a,b)
-    Aad = 0
 
-    if theta_a > 0:
-        Aad = gammad * theta_a
+    Aad = gammad * theta_a if theta_a > 0 else 0
 
     ## D.7 Distance and time-dependent loss
 
@@ -1114,10 +1100,7 @@ def tl_anomalous_reflection(f, d, z, hts, hrs, htea, hrea, hm, thetat, thetar, d
 
     # Path geometry factor (D.7.4)
 
-    mu2 = (500 * dt**2 / (ae * (np.sqrt(htea) + np.sqrt(hrea)) ** 2)) ** alpha
-
-    if mu2 > 1:
-        mu2 = 1
+    mu2 = min((500 * dt**2 / (ae * (np.sqrt(htea) + np.sqrt(hrea)) ** 2)) ** alpha, 1)
 
     # Time percentage associated with anomalous propagation adjusted for
     # general location and specific properties of the path (D.7.5)
@@ -1280,8 +1263,6 @@ def Aiter(q, Q0ca, Q0ra, flagtropo, a, b, c, dr, kmod, alpha_mod, Gm, Pm, flagra
       Output parameters:
       AiterQ   -   Attenuation level of a propoagation mechanisms exceeded
                    for q% time
-
-
 
       Example:
       AiterQ = Aiter(q, Q0ca, Q0ra, flagtropo, a, b, c, dr, kmod, alpha_mod, Gm, Pm, flagrain)
@@ -1490,7 +1471,7 @@ def clear_air_fade_tropo(A):
     """
     ## B.5 Percentage time a given clear-air fade level is exceeded on a troposcatter path
 
-    return 100 if A < 0 else 0 # Qcaftropo = Eq (B.5.1a) if A < 0 else Eq (B.5.1b)
+    return 100 if A < 0 else 0  # Qcaftropo = Eq (B.5.1a) if A < 0 else Eq (B.5.1b)
 
 
 def precipitation_fade(Afade, a, b, c, dr, kmod, alpha_mod, Gm, Pm, flagrain):
@@ -1694,41 +1675,34 @@ def p838(f, theta, pol):
     tau = 0.0 if pol == 0 else np.pi / 2.0  # horizontal polarization / vertical polarization
 
     # Coefficients for kH
-    Table1 = np.mat([[-5.33980, -0.10008, 1.13098], [-0.35351, 1.26970, 0.45400], [-0.23789, 0.86036, 0.15354], [-0.94158, 0.64552, 0.16817]])
 
-    aj_kh = np.squeeze(np.asarray(Table1[:, 0]))
-    bj_kh = np.squeeze(np.asarray(Table1[:, 1]))
-    cj_kh = np.squeeze(np.asarray(Table1[:, 2]))
+    aj_kh = np.array([-5.3398, -0.35351, -0.23789, -0.94158])
+    bj_kh = np.array([-0.10008, 1.2697, 0.86036, 0.64552])
+    cj_kh = np.array([1.13098, 0.454, 0.15354, 0.16817])
     m_kh = -0.18961
     c_kh = 0.71147
 
     # Coefficients for kV
 
-    Table2 = np.mat([[-3.80595, 0.56934, 0.81061], [-3.44965, -0.22911, 0.51059], [-0.39902, 0.73042, 0.11899], [0.50167, 1.07319, 0.27195]])
-
-    aj_kv = np.squeeze(np.asarray(Table2[:, 0]))
-    bj_kv = np.squeeze(np.asarray(Table2[:, 1]))
-    cj_kv = np.squeeze(np.asarray(Table2[:, 2]))
+    aj_kv = np.array([-3.80595, -3.44965, -0.39902, 0.50167])
+    bj_kv = np.array([0.56934, -0.22911, 0.73042, 1.07319])
+    cj_kv = np.array([0.81061, 0.51059, 0.11899, 0.27195])
     m_kv = -0.16398
     c_kv = 0.63297
 
     # Coefficients for aH
 
-    Table3 = np.mat([[-0.14318, 1.82442, -0.55187], [0.29591, 0.77564, 0.19822], [0.32177, 0.63773, 0.13164], [-5.37610, -0.96230, 1.47828], [16.1721, -3.29980, 3.43990]])
-
-    aj_ah = np.squeeze(np.asarray(Table3[:, 0]))
-    bj_ah = np.squeeze(np.asarray(Table3[:, 1]))
-    cj_ah = np.squeeze(np.asarray(Table3[:, 2]))
+    aj_ah = np.array([-0.14318, 0.29591, 0.32177, -5.3761, 16.1721])
+    bj_ah = np.array([1.82442, 0.77564, 0.63773, -0.9623, -3.2998])
+    cj_ah = np.array([-0.55187, 0.19822, 0.13164, 1.47828, 3.4399])
     m_ah = 0.67849
     c_ah = -1.95537
 
     # Coefficients for aV
 
-    Table4 = np.mat([[-0.07771, 2.33840, -0.76284], [0.56727, 0.95545, 0.54039], [-0.20238, 1.14520, 0.26809], [-48.2991, 0.791669, 0.116226], [48.5833, 0.791459, 0.116479]])
-
-    aj_av = np.squeeze(np.asarray(Table4[:, 0]))
-    bj_av = np.squeeze(np.asarray(Table4[:, 1]))
-    cj_av = np.squeeze(np.asarray(Table4[:, 2]))
+    aj_av = np.array([-0.07771, 0.56727, -0.20238, -48.2991, 48.5833])
+    bj_av = np.array([2.3384, 0.95545, 1.1452, 0.791669, 0.791459])
+    cj_av = np.array([-0.76284, 0.54039, 0.26809, 0.116226, 0.116479])
     m_av = -0.053739
     c_av = 0.83433
 
@@ -1845,63 +1819,16 @@ def precipitation_fade_initial(f, q, phi_n, phi_e, h_rainlo, h_rainhi, d_rain, p
         flagrain = 1
 
         # Values from table C.2.1
-
-        TableC21 = np.mat(
-            [
-                [-2400.0, 0.000555],
-                [-2300.0, 0.000802],
-                [-2200.0, 0.001139],
-                [-2100.0, 0.001594],
-                [-2000.0, 0.002196],
-                [-1900.0, 0.002978],
-                [-1800.0, 0.003976],
-                [-1700.0, 0.005227],
-                [-1600.0, 0.006764],
-                [-1500.0, 0.008617],
-                [-1400.0, 0.010808],
-                [-1300.0, 0.013346],
-                [-1200.0, 0.016225],
-                [-1100.0, 0.019419],
-                [-1000.0, 0.022881],
-                [-900.0, 0.026542],
-                [-800.0, 0.030312],
-                [-700.0, 0.034081],
-                [-600.0, 0.037724],
-                [-500.0, 0.041110],
-                [-400.0, 0.044104],
-                [-300.0, 0.046583],
-                [-200.0, 0.048439],
-                [-100.0, 0.049589],
-                [0.0, 0.049978],
-                [100.0, 0.049589],
-                [200.0, 0.048439],
-                [300.0, 0.046583],
-                [400.0, 0.044104],
-                [500.0, 0.041110],
-                [600.0, 0.037724],
-                [700.0, 0.034081],
-                [800.0, 0.030312],
-                [900.0, 0.026542],
-                [1000.0, 0.022881],
-                [1100.0, 0.019419],
-                [1200.0, 0.016225],
-                [1300.0, 0.013346],
-                [1400.0, 0.010808],
-                [1500.0, 0.008617],
-                [1600.0, 0.006764],
-                [1700.0, 0.005227],
-                [1800.0, 0.003976],
-                [1900.0, 0.002978],
-                [2000.0, 0.002196],
-                [2100.0, 0.001594],
-                [2200.0, 0.001139],
-                [2300.0, 0.000802],
-                [2400.0, 0.000555],
-            ]
-        )
-
-        H = np.squeeze(np.asarray(TableC21[:, 0]))
-        Pi = np.squeeze(np.asarray(TableC21[:, 1]))
+        H = np.arange(-2400, 2401, 100)
+        Pi = np.array([0.000555, 0.000802, 0.001139, 0.001594, 0.002196, 0.002978,
+                       0.003976, 0.005227, 0.006764, 0.008617, 0.010808, 0.013346,
+                       0.016225, 0.019419, 0.022881, 0.026542, 0.030312, 0.034081,
+                       0.037724, 0.04111 , 0.044104, 0.046583, 0.048439, 0.049589,
+                       0.049978, 0.049589, 0.048439, 0.046583, 0.044104, 0.04111 ,
+                       0.037724, 0.034081, 0.030312, 0.026542, 0.022881, 0.019419,
+                       0.016225, 0.013346, 0.010808, 0.008617, 0.006764, 0.005227,
+                       0.003976, 0.002978, 0.002196, 0.001594, 0.001139, 0.000802,
+                       0.000555])
 
         # Calculate two intermediate parameters (C.2.3)
 
@@ -1958,8 +1885,8 @@ def precipitation_fade_initial(f, q, phi_n, phi_e, h_rainlo, h_rainhi, d_rain, p
         # probability of a particular case (with a maximum dimension 49 as in
         # table C.2.1
 
-        Gm = np.zeros(len(TableC21))
-        Pm = np.zeros(len(TableC21))
+        Gm = np.zeros(len(Pi))
+        Pm = np.zeros(len(Pi))
 
         # Initialize Gm(1)=1, set m=1
 
@@ -2053,9 +1980,7 @@ def zero_fade_annual_time(dca, epsca, hca, f, K, phimn):
 
     # Calculate the logarithmic climatic conversion factor (B.3.2)
 
-    Cg = 10.5 - 5.6 * np.log10(1.1 + (1 if abs(phimn) <= 45 else -1) * (abs(cosd(2 * phimn))) ** 0.7) - 2.7 * np.log10(dca) + 1.7 * np.log10(1 + epsca)
-    if Cg > 10.8:
-        Cg = 10.8
+    Cg = min(10.5 - 5.6 * np.log10(1.1 + (1 if abs(phimn) <= 45 else -1) * (abs(cosd(2 * phimn))) ** 0.7) - 2.7 * np.log10(dca) + 1.7 * np.log10(1 + epsca), 10.8)
 
     # Notional zero-fade annual percentage time (B.3.3)
 
@@ -2166,7 +2091,6 @@ def dl_bull_smooth(d, h, htep, hrep, ap, f):
     # from the transmitter to the point
 
     di = d[1:-1]
-    hi = h[1:-1]
 
     Stim = max(500 * (dtot - di) / ap - htep / di)  # Eq (A.5.1)
 
@@ -2432,17 +2356,11 @@ def dl_se_ft(d, hte, hre, adft, f, omega):
 
     # First-term part of the spherical-Earth diffraction loss over land
 
-    epsr = 22
-    sigma = 0.003
-
-    Ldft_land = dl_se_ft_inner(epsr, sigma, d, hte, hre, adft, f)
+    Ldft_land = dl_se_ft_inner(22, 0.003, d, hte, hre, adft, f)
 
     # First-term part of the spherical-Earth diffraction loss over sea
 
-    epsr = 80
-    sigma = 5
-
-    Ldft_sea = dl_se_ft_inner(epsr, sigma, d, hte, hre, adft, f)
+    Ldft_sea = dl_se_ft_inner(80, 5, d, hte, hre, adft, f)
 
     # First-term spherical diffraction loss
 
@@ -2657,10 +2575,10 @@ def gaseous_abs_surface(phi_me, phi_mn, h_mid, hts, hrs, dt, f):
 
     rho_surr = water_vapour_density_rain(rho_sur, h_sur)
 
-    # Use equation (F.6.2) to calculate the sea-level specifica ttenuation due
+    # Use equation (F.6.2) to calculate the sea-level specific attenuation due
     # to water vapour undr rain conditions gamma_wr
 
-    gamma_ar, gamma_wr = specific_sea_level_attenuation(f, rho_surr, h_sur)
+    _, gamma_wr = specific_sea_level_attenuation(f, rho_surr, h_sur)
 
     # Calculate the height for water-vapour density (F.2.1)
 
@@ -2775,11 +2693,7 @@ def tropospheric_path(dt, hts, hrs, theta_e, theta_tpos, theta_rpos, ae, phi_re,
 
     # Limit d_tcv such that 0 <= dtcv <= dt
 
-    if d_tcv < 0:
-        d_tcv = 0
-
-    if d_tcv > dt:
-        d_tcv = dt
+    d_tcv = np.clip(d_tcv, 0, dt)
 
     # Horizontal path length from common volume to receiver (3.9.1b)
 
@@ -2789,7 +2703,7 @@ def tropospheric_path(dt, hts, hrs, theta_e, theta_tpos, theta_rpos, ae, phi_re,
     # transmitter and receiver longitudes and latitudes using the great circle
     # path method of Attachment H by seting d_pnt = d_tcv
 
-    phi_cve, phi_cvn, bt2r, dgc = great_circle_path(phi_re, phi_te, phi_rn, phi_tn, Re, d_tcv)
+    phi_cve, phi_cvn, _, _ = great_circle_path(phi_re, phi_te, phi_rn, phi_tn, Re, d_tcv)
 
     # Calculate the height of the troposcatter common volume (3.9.2)
 
@@ -2800,14 +2714,14 @@ def tropospheric_path(dt, hts, hrs, theta_e, theta_tpos, theta_rpos, ae, phi_re,
 
     d_pnt = 0.5 * d_tcv
 
-    phi_tcve, phi_tcvn, bt2r, dgc = great_circle_path(phi_re, phi_te, phi_rn, phi_tn, Re, d_pnt)
+    phi_tcve, phi_tcvn, _, _ = great_circle_path(phi_re, phi_te, phi_rn, phi_tn, Re, d_pnt)
 
     # Calculate the longitude and latitude of the midpoint of the path segment
     # from receiver to common volume by setting dpnt = dt - 0.5drcv
 
     d_pnt = dt - 0.5 * d_rcv
 
-    phi_rcve, phi_rcvn, bt2r, dgc = great_circle_path(phi_re, phi_te, phi_rn, phi_tn, Re, d_pnt)
+    phi_rcve, phi_rcvn, _, _ = great_circle_path(phi_re, phi_te, phi_rn, phi_tn, Re, d_pnt)
 
     return d_tcv, d_rcv, phi_cve, phi_cvn, h_cv, phi_tcve, phi_tcvn, phi_rcve, phi_rcvn
 
@@ -2988,10 +2902,9 @@ def smooth_earth_heights(d, h, hts, hrs, ae, lam):
     hrep = hrs - hsr  # Eq (3.8.11b)
 
     return theta_t, theta_r, theta_tpos, theta_rpos, dlt, dlr, lt, lr, hstip, hsrip, hstipa, hsripa, htea, hrea, mses, hm, hst, hsr, htep, hrep, FlagLos50
-    end
 
 
-def interp2(map, lon, lat, lon_spacing, lat_spacing):
+def interp2(matrix_map, lon, lat, lon_spacing, lat_spacing):
     """
     Bi-linear interpolation of data contained in 2D matrix map at point (lon,lat)
     It assumes that the grid is rectangular with spacing of 1.5 deg in both lon and lat
@@ -3001,7 +2914,7 @@ def interp2(map, lon, lat, lon_spacing, lat_spacing):
     latitudeOffset = 90.0 - lat
     longitudeOffset = lon
 
-    sizeY, sizeX = map.shape
+    sizeY, sizeX = matrix_map.shape
 
     latitudeIndex = int(latitudeOffset / lat_spacing)
     longitudeIndex = int(longitudeOffset / lon_spacing)
@@ -3009,10 +2922,10 @@ def interp2(map, lon, lat, lon_spacing, lat_spacing):
     latitudeFraction = (latitudeOffset / lat_spacing) - latitudeIndex
     longitudeFraction = (longitudeOffset / lon_spacing) - longitudeIndex
 
-    value_ul = map[latitudeIndex][longitudeIndex]
-    value_ur = map[latitudeIndex][(longitudeIndex + 1) % sizeX]
-    value_ll = map[(latitudeIndex + 1) % sizeY][longitudeIndex]
-    value_lr = map[(latitudeIndex + 1) % sizeY][(longitudeIndex + 1) % sizeX]
+    value_ul = matrix_map[latitudeIndex][longitudeIndex]
+    value_ur = matrix_map[latitudeIndex][(longitudeIndex + 1) % sizeX]
+    value_ll = matrix_map[(latitudeIndex + 1) % sizeY][longitudeIndex]
+    value_lr = matrix_map[(latitudeIndex + 1) % sizeY][(longitudeIndex + 1) % sizeX]
 
     interpolatedHeight1 = (longitudeFraction * (value_ur - value_ul)) + value_ul
     interpolatedHeight2 = (longitudeFraction * (value_lr - value_ll)) + value_ll
@@ -3120,10 +3033,7 @@ def great_circle_path(Phire, Phite, Phirn, Phitn, Re, dpnt):
 
     # Calculate the bearing of the great-circle path for Tx to Rx (H.2.6)
 
-    if abs(x1) < 1e-9 and abs(y1) < 1e-9:
-        Bt2r = Phire
-    else:
-        Bt2r = atan2d(y1, x1)
+    Bt2r = Phire if abs(x1) < 1e-9 and abs(y1) < 1e-9 else atan2d(y1, x1)
 
     ## H.3 Calculation of intermediate path point
 
@@ -3138,7 +3048,7 @@ def great_circle_path(Phire, Phite, Phirn, Phitn, Re, dpnt):
 
     # The latitude of the intermediate point is now given by (H.3.3)
 
-    Phipntn = asind(s)  # degs
+    Phipntn = np.arcsin(s) * 180.0 / np.pi  # degs
 
     # Calculate the quantity x2 (H.3.4a)
 
@@ -3150,10 +3060,7 @@ def great_circle_path(Phire, Phite, Phirn, Phitn, Re, dpnt):
 
     # Calculate the longitude of the intermediate point Phipnte (H.3.5)
 
-    if x2 < 1e-9 and y2 < 1e-9:
-        Phipnte = Bt2r
-    else:
-        Phipnte = Phite + atan2d(y2, x2)
+    Phipnte = Bt2r if x2 < 1e-9 and y2 < 1e-9 else Phite + atan2d(y2, x2)
 
     return Phipnte, Phipntn, Bt2r, dgc
 
@@ -3207,10 +3114,6 @@ def sind(x):
 
 def cosd(x):
     return np.cos(x * np.pi / 180.0)
-
-
-def asind(x):
-    return np.arcsin(x) * 180.0 / np.pi
 
 
 def atan2d(y, x):
