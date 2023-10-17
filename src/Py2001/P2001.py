@@ -3,15 +3,13 @@
 """
 Created on Tue 5 Sep 2022
 
-@author: eeveetza
+@authors: Ivica Stevanovic, Adrien Demarez
 """
 
+from importlib.resources import files
 import numpy as np
 
 # from scipy import interpolate
-# import dask.dataframe
-
-from importlib.resources import files
 
 DigitalMaps = {}
 with np.load(files("Py2001").joinpath("P2001.npz")) as DigitalMapsNpz:
@@ -2836,13 +2834,9 @@ def smooth_earth_heights(d, h, hts, hrs, ae, lam):
 
     ## 3.8 Effective heights and path roughness parameter
 
-    v1 = 0
-    for ii in range(1, n):
-        v1 = v1 + (d[ii] - d[ii - 1]) * (h[ii] + h[ii - 1])  # Eq (85)
-
-    v2 = 0
-    for ii in range(1, n):
-        v2 = v2 + (d[ii] - d[ii - 1]) * (h[ii] * (2 * d[ii] + d[ii - 1]) + h[ii - 1] * (d[ii] + 2 * d[ii - 1]))  # Eq (86)
+    ii = np.arange(1,n)
+    v1 = ((d[ii] - d[ii - 1]) * (h[ii] + h[ii - 1])).sum()  # Eq (85)
+    v2 = ((d[ii] - d[ii - 1]) * (h[ii] * (2 * d[ii] + d[ii - 1]) + h[ii - 1] * (d[ii] + 2 * d[ii - 1]))).sum()  # Eq (86)
 
     hstip = (2 * v1 * dtot - v2) / dtot**2  # Eq (3.8.3a)
     hsrip = (v2 - v1 * dtot) / dtot**2  # Eq (3.8.3b)
