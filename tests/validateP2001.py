@@ -47,7 +47,7 @@ for filename in filenames:
             print(f"\tProcessing {i+1} / {len(df2)}, GHz={row.GHz}, Tpc={row.Tpc} % - {Tpc_last} % ...")
             GHz_prev = row.GHz
         Lb_computed.append( P2001.bt_loss(df1.d.to_numpy(), df1.h.to_numpy(), df1.z.to_numpy(), row.GHz, row.Tpc, row.Phire, \
-                                          row.Phirn, row.Phite, row.Phitn, row.Hrg, row.Htg, row.Grx, row.Grt, row.FlagVp) )
+                                          row.Phirn, row.Phite, row.Phitn, row.Hrg, row.Htg, row.Grx, row.Gtx, row.FlagVp) )
     Lb_computed = np.array(Lb_computed)
     Lb_ref = df2.Lb
     delta = np.abs(Lb_computed - Lb_ref)
