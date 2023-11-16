@@ -9,8 +9,6 @@ Created on Tue 5 Sep 2022
 from importlib.resources import files
 import numpy as np
 
-# from scipy import interpolate
-
 DigitalMaps = {}
 with np.load(files("Py2001").joinpath("P2001.npz")) as DigitalMapsNpz:
     for k in DigitalMapsNpz.files:
@@ -1183,16 +1181,16 @@ def longest_cont_dist(d, zone, zone_r):
     Example:
     dm = longest_cont_dist(d, zone, zone_r)
 
-     Rev   Date        Author                          Description
-     -------------------------------------------------------------------------------
-     v0    22JAN16     Ivica Stevanovic, OFCOM         First implementation in matlab
-     v1    12FEB16     Ivica Stevanovic, OFCOM         included zone_r==12
-     v2    08JUL16     Ivica Stevanovic, OFCOM         modified mapping to  GlobCover data format
-                                                       before: 2 - Inland, 1 - Coastal land, 3 - Sea
-                                                       now:    4 - Inland, 3 - Coastal land, 1 - Sea
-     v3    18JUL16     Ivica Stevanovic, OFCOM         modified condition d(stop(i)<d(end)) --> stop(i) < nmax
-     v4    06SEP22     Ivica Stevanovic, OFCOM         translated to python
-
+    Rev   Date        Author                          Description
+    -------------------------------------------------------------------------------
+    v0    22JAN16     Ivica Stevanovic, OFCOM         First implementation in matlab
+    v1    12FEB16     Ivica Stevanovic, OFCOM         included zone_r==12
+    v2    08JUL16     Ivica Stevanovic, OFCOM         modified mapping to  GlobCover data format
+                                                      before: 2 - Inland, 1 - Coastal land, 3 - Sea
+                                                      now:    4 - Inland, 3 - Coastal land, 1 - Sea
+    v3    18JUL16     Ivica Stevanovic, OFCOM         modified condition d(stop(i)<d(end)) --> stop(i) < nmax
+    v4    06SEP22     Ivica Stevanovic, OFCOM         translated to python
+    v5    11NOV22     Ivica Stevanovic, OFCOM         Corrected a bug in the second if clause (suggested by Martin-Pierre Lussier @mplussier)   
 
     """
     dm = 0
@@ -1211,7 +1209,7 @@ def longest_cont_dist(d, zone, zone_r):
             delta += (d[stop[i] + 1] - d[stop[i]]) / 2.0
 
         if start[i] > 0:
-            delta += (d[stop[i]] - d[stop[i] - 1]) / 2.0
+            delta += (d[start[i]] - d[start[i] - 1]) / 2.0
 
         dm = max(d[stop[i]] - d[start[i]] + delta, dm)
 
@@ -1223,19 +1221,19 @@ def tl_free_space(f, d):
     This function computes free-space basic transmission loss in dB
     as defined in ITU-R P.2001-4 Section 3.11
 
-      Input parameters:
-      f       -   Frequency (GHz)
-      d       -   3D Distance (km)
+    Input parameters:
+    f       -   Frequency (GHz)
+    d       -   3D Distance (km)
 
-      Output parameters:
-      Lbfs    -   Free-space basic transmission loss (dB)
+    Output parameters:
+    Lbfs    -   Free-space basic transmission loss (dB)
 
 
-      Rev   Date        Author                          Description
-      -------------------------------------------------------------------------------
-      v0    13JUL16     Ivica Stevanovic, OFCOM  Mer       Initial version MATLAB
-      v1    11FEB22     Ivica Stevanovic, OFCOM         Aligned to P.2001-4
-      v2    06SEP22     Ivica Stevanovic, OFCOM         translated to python
+    Rev   Date        Author                          Description
+    -------------------------------------------------------------------------------
+    v0    13JUL16     Ivica Stevanovic, OFCOM  Mer       Initial version MATLAB
+    v1    11FEB22     Ivica Stevanovic, OFCOM         Aligned to P.2001-4
+    v2    06SEP22     Ivica Stevanovic, OFCOM         translated to python
     """
     Lbfs = 92.4 + 20 * np.log10(f) + 20 * np.log10(d)
 
@@ -2934,24 +2932,25 @@ def interp2(matrix_map, lon, lat, lon_spacing, lat_spacing):
 def path_fraction(d, zone, zone_r):
     """
     path_fraction Path fraction belonging to a given zone_r
-     omega = path_fraction(d, zone, zone_r)
-     This function computes the path fraction belonging to a given zone_r
-     of the great-circle path (km)
+    omega = path_fraction(d, zone, zone_r)
+    This function computes the path fraction belonging to a given zone_r
+    of the great-circle path (km)
 
-     Input arguments:
-     d       -   vector of distances in the path profile
-     zone    -   vector of zones in the path profile
-     zone_r  -   reference zone for which the fraction is computed
+    Input arguments:
+    d       -   vector of distances in the path profile
+    zone    -   vector of zones in the path profile
+    zone_r  -   reference zone for which the fraction is computed
 
-     Output arguments:
-     omega   -   path fraction belonging to the given zone_r
+    Output arguments:
+    omega   -   path fraction belonging to the given zone_r
 
-     Example:
-     omega = path_fraction(d, zone, zone_r)
+    Example:
+    omega = path_fraction(d, zone, zone_r)
 
-     Rev   Date        Author                          Description
-     -------------------------------------------------------------------------------
-     v0    02FEB16     Ivica Stevanovic, OFCOM         First implementation in matlab
+    Rev   Date        Author                          Description
+    -------------------------------------------------------------------------------
+    v0    02FEB16     Ivica Stevanovic, OFCOM         First implementation in matlab
+    v1    11NOV22     Ivica Stevanovic, OFCOM         Corrected a bug in the second if clause (suggested by Martin-Pierre Lussier @mplussier)   
     """
     dm = 0
 
@@ -2965,7 +2964,7 @@ def path_fraction(d, zone, zone_r):
             delta = delta + (d[stop[i] + 1] - d[stop[i]]) / 2.0
 
         if d[start[i]] > 0:
-            delta = delta + (d[stop[i]] - d[stop[i] - 1]) / 2.0
+            delta = delta + (d[start[i]] - d[start[i] - 1]) / 2.0
 
         dm = dm + d[stop[i]] - d[start[i]] + delta
 
@@ -3065,29 +3064,29 @@ def great_circle_path(Phire, Phite, Phirn, Phitn, Re, dpnt):
 def find_intervals(series):
     """
     find_intervals Find all intervals with consecutive 1's
-     [k1, k2] = find_intervals(series)
-     This function finds all 1's intervals, namely, the indices when the
-     intervals start and where they end
+    [k1, k2] = find_intervals(series)
+    This function finds all 1's intervals, namely, the indices when the
+    intervals start and where they end
 
-     For example, for the input indices
-           0 0 1 1 1 1 0 0 0 1 1 0 0
-     this function will give back
-       k1 = 3, 10
-       k2 = 6, 11
+    For example, for the input indices
+        0 0 1 1 1 1 0 0 0 1 1 0 0
+    this function will give back
+        k1 = 3, 10
+        k2 = 6, 11
 
-     Input arguments:
-     indices -   vector containing zeros and ones
+    Input arguments:
+    indices -   vector containing zeros and ones
 
-     Output arguments:
-     k1      -   vector of start-indices of the found intervals
-     k2      -   vector of end-indices of the found intervals
+    Output arguments:
+    k1      -   vector of start-indices of the found intervals
+    k2      -   vector of end-indices of the found intervals
 
-     Example:
-     [k1, k2] = find_intervals(indices)
+    Example:
+    [k1, k2] = find_intervals(indices)
 
-     Rev   Date        Author                          Description
-     -------------------------------------------------------------------------------
-     v0    18MAR22     Ivica Stevanovic, OFCOM         First implementation in matlab
+    Rev   Date        Author                          Description
+    -------------------------------------------------------------------------------
+    v0    18MAR22     Ivica Stevanovic, OFCOM         First implementation in matlab
 
     """
     k1 = []
