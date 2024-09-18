@@ -131,3 +131,9 @@ dmypy.json
 
 .DS_Store
 .vscode/
+# Ignore all the files in the folder maps except the folder itself
+/src/Py2001/maps/*.*
+!/src/Py2001/maps/.gitkeep
+
+# Ignore all *.npz files
+/src/Py2001/*.npz

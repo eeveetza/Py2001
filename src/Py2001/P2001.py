@@ -2908,6 +2908,9 @@ def interp2(matrix_map, lon, lat, lon_spacing, lat_spacing):
 
     latitudeOffset = 90.0 - lat
     longitudeOffset = lon
+    
+    if (lon < 0.0):
+        longitudeOffset = lon + 360.0
 
     sizeY, sizeX = matrix_map.shape
 
