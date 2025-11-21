@@ -12,7 +12,7 @@ contained in this file "initiate_digital_maps.py". The script produces the
 necessary maps in .npz format
 
 The following maps should be extracted in the folder ./maps:
-From ITU-R P.2001-4 (https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.2001-4-202109-S!!ZIP-E.zip)
+From ITU-R P.2001-6 (https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.2001-6-202509-I!!ZIP-E.zip)
 DN_Median.txt, DN_SubSlope.txt, DN_SupSlope.txt, dndz_01.txt
 Esarain_Mt_v5.txt, Esarain_Pr6_v5.txt, Esarain_Beta_v5.txt
 FoEs0.1.txt, FoEs01.txt, FoEs10.txt, FoEs50.txt
@@ -68,6 +68,6 @@ if (not failed):
       print("P2001.npz file created successfully.")
       
 else:
-      print("The process failed. Make sure that the required maps are downloaded from ITU-R P.2001-4 and extracted to the folder ./maps")
+      print("The process failed. Make sure that the required maps are downloaded from ITU-R P.2001-6 and extracted to the folder ./maps")
 
 

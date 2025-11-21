@@ -1,6 +1,6 @@
 # Python Implementation of Recommendation ITU-R P.2001
 
-This code repository contains a python software implementation of  [Recommendation ITU-R P.2001-4](https://www.itu.int/rec/R-REC-P.2001/en) with a general purpose wide-range terrestrial propagation model in the frequency range 30 MHz to 50 GHz.    
+This code repository contains a python software implementation of  [Recommendation ITU-R P.2001-6](https://www.itu.int/rec/R-REC-P.2001/en) with a general purpose wide-range terrestrial propagation model in the frequency range 30 MHz to 50 GHz.    
 
 
 The package can be downloaded and installed using:
@@ -18,9 +18,9 @@ This is a translation of the original reference MATLAB/Octave implementation of 
 
 | File/Folder               | Description                                                         |
 |----------------------------|---------------------------------------------------------------------|
-|`/src/Py2001/P2001.py`                | python implementation of Recommendation ITU-R P.2001-4         |
+|`/src/Py2001/P2001.py`                | python implementation of Recommendation ITU-R P.2001         |
 |`/src/Py2001/initiate_digital_maps.py`| python script that processes the ITU-R maps and generates the necessary `.npz` file. It needs to be run prior to using this software implementation. For details, see [Integrating ITU Digital Products](#integrating-itu-digital-products). |
-|`/tests/validateP2001.py`          | python script used to validate the implementation of Recommendation ITU-R P.2001-4 in `P2001.bt_loss()`             |
+|`/tests/validateP2001.py`          | python script used to validate the implementation of Recommendation ITU-R P.2001 in `P2001.bt_loss()`             |
 |`/tests/validation_profiles/`    | Folder containing a set of terrain profiles and inputs for validation of software implementations  of this Recommendation |
 
 ## Integrating ITU Digital Products
@@ -31,7 +31,7 @@ This software uses ITU digital products that are integral part of Recommendation
 
 1. **Download and extract the required maps** to `./src/Py2001/maps`:
 
-   - From [ITU-R P.2001-4](https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.2001-4-202109-S!!ZIP-E.zip):
+   - From [ITU-R P.2001-6](https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.2001-6-202509-I!!ZIP-E.zip):
      - `DN_Median.txt`, `DN_SubSlope.txt`, `DN_SupSlope.txt`, `dndz_01.txt`
      - `Esarain_Mt_v5.txt`, `Esarain_Pr6_v5.txt`, `Esarain_Beta_v5.txt`	
      - `FoEs0.1.txt`,  `FoEs01.txt`,  `FoEs10.txt`, `FoEs50.txt`

@@ -2,6 +2,7 @@
 # pylint: disable=invalid-name,line-too-long,too-many-lines,too-many-arguments,too-many-locals,too-many-statements
 """
 Created on Tue 5 Sep 2022
+Modified on Fri 21 Nov 2025 to update the version number (IS) to ITU-R P.2001-6
 
 @authors: Ivica Stevanovic, Adrien Demarez
 """
@@ -17,7 +18,7 @@ with np.load(files("Py2001").joinpath("P2001.npz")) as DigitalMapsNpz:
 
 def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, FlagVP):
     """
-    P2001.bt_loss basic transmission loss according to ITU-R P.2001-4
+    P2001.bt_loss basic transmission loss according to ITU-R P.2001-6
     Lb = P2001.bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, FlagVP)
 
     This function computes path loss due to both signal enhancements and fading
@@ -51,7 +52,7 @@ def bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, F
     FlagVp            int     T.2.2.1     Polarisation: 1 = vertical; 0 = horizontal
 
     Output parameters:
-    Lb     -   basic  transmission loss according to ITU-R P.2001-4
+    Lb     -   basic  transmission loss according to ITU-R P.2001-6
 
     Example:
     Lb = P2001.bt_loss(d, h, z, GHz, Tpc, Phire, Phirn, Phite, Phitn, Hrg, Htg, Grx, Gtx, FlagVP)
